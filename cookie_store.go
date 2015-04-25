@@ -1,6 +1,7 @@
 package sessions
 
 import (
+	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
 )
 
@@ -26,8 +27,14 @@ type CookieStore interface {
 //
 // It is recommended to use an authentication key with 32 or 64 bytes. The encryption key,
 // if set, must be either 16, 24, or 32 bytes to select AES-128, AES-192, or AES-256 modes.
-func NewCookieStore(keyPairs ...[]byte) CookieStore {
-	return &cookieStore{sessions.NewCookieStore(keyPairs...)}
+func NewCookieStore(maxAge int, keyPairs ...[]byte) CookieStore {
+	c := sessions.NewCookieStore(keyPairs...)
+	for _, codec := range c.Codecs {
+		if c, ok := codec.(*securecookie.SecureCookie); ok {
+			c.MaxAge(maxAge)
+		}
+	}
+	return &cookieStore{c}
 }
 
 type cookieStore struct {
